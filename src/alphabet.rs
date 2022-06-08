@@ -6,6 +6,7 @@ use std::fmt;
 pub const EPSILON: &str = "";
 
 pub type Letter = char;
+pub type Word = String;
 
 pub struct Alphabet {
     letters: HashSet<Letter>
