@@ -10,10 +10,11 @@ fn main() {
    let T = Alphabet::from_iter(['a', 'b', 'c'].into_iter()); 
    
    let P = ruleset!(
-       A -> a | _,
-       C -> c,
-       S -> _,
+       A -> a | b | c
+       C -> c
+       S -> s
        AC -> CA
+       S -> _
    );
    
    let S = 'S';

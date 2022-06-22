@@ -2,6 +2,7 @@ use std::collections::HashSet;
 
 use crate::alphabet::{Alphabet, Letter, Word};
 
+
 #[derive(Eq, Hash, PartialEq, Clone)]
 pub struct Rule {
     pub start: Word,
@@ -52,24 +53,28 @@ impl std::ops::Add for RuleSet {
 
 #[macro_export]
 macro_rules! ruleset {
-    ($a:ident -> $b:stmt) => {
-        { 
+     (
+        $($a:ident -> $b:pat_param$(| $c:pat_param)*$(,)?)*
+     ) => {
+        {
             let mut ruleset = gramatik::RuleSet::new();
 
-            let start = stringify!($a).to_owned();
-            let targets = stringify!($b).split("|").map(|r| r.trim().replace(";", "")).collect::<Vec<String>>();
-
-            for target in targets.into_iter() {
-                let rule = gramatik::Rule::new(start.clone(), target);
-                ruleset.add_rule(rule);
-            }
-
+            $(
+                let start = stringify!($a).to_owned();
+                let mut target = stringify!($b).to_owned();
+                
+                if target == "_" {
+                    target = "ε".to_owned();
+                }
+                
+                ruleset.add_rule(gramatik::Rule::new(start, target));
+    
+                ruleset = ruleset $(+ ruleset!($a -> $c))*;
+            )*
+            
             ruleset
         }
     };
-    ($a:ident -> $b:stmt, $($c:ident -> $d:stmt),+) => {
-        ruleset!($a -> $b) + ruleset!($($c -> $d),+)
-    }
 }
 
 /// Represents a G<N, T, P, S> grammar.
@@ -79,8 +84,3 @@ macro_rules! ruleset {
 ///   S: Start symbol
 pub struct Gramatik(pub Alphabet, pub Alphabet, pub RuleSet, pub Letter);
 
-impl Gramatik {
-    pub fn new(terminals: Alphabet, non_terminal: Alphabet, ruleset: RuleSet, start: Letter) -> Self {
-        Self(terminals, non_terminal, ruleset, start)
-    }
-}
