@@ -3,7 +3,7 @@ use std::collections::HashSet;
 use std::hash::Hash;
 use std::fmt;
 
-pub const EPSILON: &str = "";
+pub const EPSILON: char = 'ε';
 
 pub type Letter = char;
 pub type Word = String;
@@ -13,11 +13,8 @@ pub struct Alphabet {
 }
 
 impl Alphabet {
-    pub fn from_iter<I>(i: I) -> Self 
-    where <I as IntoIterator>::Item: Hash, I: std::iter::Iterator<Item = char> {
-        Self {
-            letters: HashSet::from_iter(i)
-        }
+    pub fn contains(&self, letter: Letter) -> bool {
+        self.letters.contains(&letter)
     }
 }
 
@@ -36,4 +33,12 @@ impl fmt::Display for Alphabet {
     }
 }
 
+impl<I> From<I> for Alphabet 
+where <I as IntoIterator>::Item: Hash + Eq + PartialEq + Into<char>, I: IntoIterator,
+{
+    fn from(i: I) -> Self {
 
+        let letters = i.into_iter().map(|e| e.into());
+        Self { letters: HashSet::from_iter(letters) }
+    }
+}

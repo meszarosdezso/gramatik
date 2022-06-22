@@ -1,25 +1,24 @@
 pub mod alphabet;
 pub mod gramatik;
+pub mod rules;
 
-use alphabet::Alphabet;
 use gramatik::Gramatik;
 
 #[allow(non_snake_case)]
 fn main() {
-   let N = Alphabet::from_iter(['C', 'S', 'A'].into_iter());
-   let T = Alphabet::from_iter(['a', 'b', 'c'].into_iter()); 
+   let N = ['A', 'B', 'C', 'S'].into();
+   let T = ['a', 'b', 'c'].into();
    
    let P = ruleset!(
-       A -> a | b | c
-       C -> c
-       S -> s
-       AC -> CA
        S -> _
+       A -> abc | aB
+       B -> b
    );
    
    let S = 'S';
 
-   println!("{P}");
+   let grammar = Gramatik(N, T, P, S);
 
-   let _grammar = Gramatik(N, T, P, S);
+   println!("{}", grammar.is_class(2)); // true
+   println!("{}", grammar.class()); // 3
 }

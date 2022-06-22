@@ -1,86 +1,77 @@
-use std::collections::HashSet;
+use crate::alphabet::Alphabet;
+use crate::alphabet::EPSILON;
+use crate::alphabet::Letter;
+use crate::rules::Rule;
+use crate::rules::RuleSet;
 
-use crate::alphabet::{Alphabet, Letter, Word};
-
-
-#[derive(Eq, Hash, PartialEq, Clone)]
-pub struct Rule {
-    pub start: Word,
-    pub end: Word
-}
-
-impl Rule {
-    pub fn new(start: Word, end: Word) -> Self {
-        Self { start, end }
-    }
-}
-
-pub struct RuleSet {
-    rules: HashSet<Rule>
-}
-
-impl RuleSet {
-    pub fn new() -> Self {
-        Self { rules: HashSet::new() }
-    }
-
-    pub fn add_rule(&mut self, rule: Rule) {
-        self.rules.insert(rule);
-    }
-}
-
-impl std::fmt::Display for RuleSet {
-    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> Result<(), std::fmt::Error> {
-        let mut output = String::new();
-        for rule in self.rules.iter() {
-            output.push_str(&format!("{} -> {}\n", rule.start, rule.end));
-        }
-        write!(f, "{}", output)
-    }
-}
-
-impl std::ops::Add for RuleSet {
-    type Output = Self;
-
-    fn add(self, other: Self) -> Self {
-        let mut rules = self.rules;
-        for rule in other.rules.into_iter() {
-            rules.insert(rule);
-        }
-        Self { rules }
-    }
-}
-
-#[macro_export]
-macro_rules! ruleset {
-     (
-        $($a:ident -> $b:pat_param$(| $c:pat_param)*$(,)?)*
-     ) => {
-        {
-            let mut ruleset = gramatik::RuleSet::new();
-
-            $(
-                let start = stringify!($a).to_owned();
-                let mut target = stringify!($b).to_owned();
-                
-                if target == "_" {
-                    target = "ε".to_owned();
-                }
-                
-                ruleset.add_rule(gramatik::Rule::new(start, target));
-    
-                ruleset = ruleset $(+ ruleset!($a -> $c))*;
-            )*
-            
-            ruleset
-        }
-    };
-}
 
 /// Represents a G<N, T, P, S> grammar.
 ///   N: Alphabet of non terminal symbols
-///   T: Aplhabet of terminal symbols
+///   T: Alphabet of terminal symbols
 ///   P: The grammar rules
 ///   S: Start symbol
 pub struct Gramatik(pub Alphabet, pub Alphabet, pub RuleSet, pub Letter);
 
+impl Gramatik {
+    pub fn class(&self) -> u8 {
+        for i in (0..=3).rev() {
+            if self.is_class(i) {
+                return i;
+            }
+        }
+        
+        panic!("This gramatik has no class.")
+    }
+
+    pub fn is_class(&self, class: u8) -> bool {
+
+        let check_start = |rule: &Rule| -> bool {
+            if rule.start.len() != 1   {
+                return false;
+            }
+
+            let start =  rule.start.chars().nth(0).unwrap();
+            if !self.0.contains(start) && start != self.3 {
+                return false;
+            }
+            true
+        };
+
+        match class {
+            // aaaAbbb => aaaBbbb y
+            // aaaAbbb => aaabbb x
+            1 => {
+                let mut kes = false;
+                for rule in self.2.rules.iter() {
+                    if rule.end.contains(self.3) {
+                        if kes {
+                            return false;
+                        }
+                        kes = true;
+                    }
+                }
+                true
+            },
+            2 => {
+                self.2.rules.iter().all(check_start)
+            }
+            3 => {
+                for rule in self.2.rules.iter() {
+                    if !check_start(rule) {
+                        return false
+                    }
+
+                    for (i, c) in rule.end.chars().enumerate() {
+                        if c != EPSILON && !self.1.contains(c) {
+                            if i != rule.end.len() - 1 {
+                                return false
+                            }
+                        }
+                    }
+                }
+                true
+            }
+            _ => panic!("Invalid class argument! Only valid classes are: 0, 1, 2, 3")
+        }
+    }
+}
