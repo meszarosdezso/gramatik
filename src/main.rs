@@ -1,24 +1,27 @@
 pub mod alphabet;
 pub mod gramatik;
+pub mod language;
 pub mod rules;
 
 use gramatik::Gramatik;
 
 #[allow(non_snake_case)]
 fn main() {
-   let N = ['A', 'B', 'C', 'S'].into();
-   let T = ['a', 'b', 'c'].into();
-   
-   let P = ruleset!(
-       S -> _
-       A -> abc | aB
-       B -> b
-   );
-   
-   let S = 'S';
+    let N = ['A', 'B', 'C', 'S'].into();
+    let T = ['a', 'b', 'c'].into();
 
-   let grammar = Gramatik(N, T, P, S);
+    let P = ruleset!(
+        S -> _
+        aaB -> aaab
+    );
 
-   println!("{}", grammar.is_class(2)); // true
-   println!("{}", grammar.class()); // 3
+    let S = 'S';
+
+    let grammar = Gramatik::new(N, T, P, S).unwrap();
+
+    println!("1. {}", grammar.is_class(1));
+    println!("2. {}", grammar.is_class(2));
+    println!("3. {}", grammar.is_class(3));
+
+    println!("{}", grammar.class());
 }

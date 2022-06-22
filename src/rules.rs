@@ -5,7 +5,7 @@ use crate::alphabet::Word;
 #[derive(Eq, Hash, PartialEq, Clone)]
 pub struct Rule {
     pub start: Word,
-    pub end: Word
+    pub end: Word,
 }
 
 impl Rule {
@@ -14,9 +14,15 @@ impl Rule {
     }
 }
 
+impl std::fmt::Display for Rule {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> Result<(), std::fmt::Error> {
+        write!(f, "{} -> {}", self.start, self.end)
+    }
+}
+
 #[derive(Default)]
 pub struct RuleSet {
-    pub rules: HashSet<Rule>
+    pub rules: HashSet<Rule>,
 }
 
 impl RuleSet {
@@ -29,7 +35,7 @@ impl std::fmt::Display for RuleSet {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> Result<(), std::fmt::Error> {
         let mut output = String::new();
         for rule in self.rules.iter() {
-            output.push_str(&format!("{} -> {}\n", rule.start, rule.end));
+            output.push_str(&format!("{}\n", rule));
         }
         write!(f, "{}", output)
     }
@@ -58,16 +64,16 @@ macro_rules! ruleset {
             $(
                 let start = stringify!($a).to_owned();
                 let mut target = stringify!($b).to_owned();
-                
+
                 if target == "_" {
                     target = alphabet::EPSILON.to_string();
                 }
-                
+
                 ruleset.add_rule(rules::Rule::new(start, target));
-    
+
                 ruleset = ruleset $(+ ruleset!($a -> $c))*;
             )*
-            
+
             ruleset
         }
     };
