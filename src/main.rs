@@ -25,12 +25,11 @@ fn main() {
 
     println!("Grammar class: {}", grammar.class());
 
-    let delta = |q: State, a| match (q.0, a) {
-        ("q0", 'a') => "q1".into(),
-        ("q1", 'a') => "q0".into(),
-        ("q1", 'b') => "q2".into(),
-        _ => panic!("Invalid state: cannot handle '{a}' in {q} state."),
-    };
+    let delta = delta_fn!(
+        (q0, a) -> q1
+        (q1, a) -> q0
+        (q1, b) -> q2
+    );
 
     let automata = Automata::new(
         ["q0", "q1", "q2"],

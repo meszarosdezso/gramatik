@@ -79,3 +79,22 @@ impl<'a> Automata<'a> {
         return state;
     }
 }
+
+#[macro_export]
+macro_rules! delta_fn {
+    ($(($q:ident, $a:ident) -> $r:ident)*) => {
+        |q: State, a: alphabet::Letter| {
+            let a = a.to_string();
+            let a = a.as_str();
+
+            match (q.0, a) {
+            $(
+                (
+                    stringify!($q),
+                    stringify!($a)
+                ) => State(stringify!($r)),
+            )*
+            _ => panic!("Invalid state: cannot handle '{a}' in {q} state."),
+        }}
+    };
+}
