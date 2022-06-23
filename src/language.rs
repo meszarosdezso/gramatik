@@ -4,7 +4,7 @@ use crate::gramatik::Gramatik;
 pub struct Language {}
 
 impl From<Gramatik> for Language {
-    fn from(g: Gramatik) -> Self {
+    fn from(_g: Gramatik) -> Self {
         Self {}
     }
 }
