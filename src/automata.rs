@@ -3,7 +3,7 @@ use std::hash::Hash;
 
 use crate::alphabet::{Alphabet, Letter};
 
-#[derive(Eq, PartialEq, Hash, Debug)]
+#[derive(Eq, PartialEq, Hash, Debug, Clone)]
 pub struct State<'a>(pub &'a str);
 
 impl<'a> std::fmt::Display for State<'a> {
@@ -18,10 +18,12 @@ impl<'a> From<&'a str> for State<'a> {
     }
 }
 
+type DeltaFn<'a> = dyn Fn(State<'a>, Letter) -> State;
+
 pub struct Automata<'a>(
     HashSet<State<'a>>,
     Alphabet,
-    &'a dyn FnMut(&str, Letter) -> State,
+    &'a DeltaFn<'a>,
     State<'a>,
     HashSet<State<'a>>,
 );
@@ -30,7 +32,7 @@ impl<'a> Automata<'a> {
     pub fn new<S, AS>(
         states: S,
         alphabet: Alphabet,
-        delta: &'a dyn FnMut(&str, Letter) -> State,
+        delta: &'a DeltaFn<'a>,
         start_state: State<'a>,
         accepted_states: AS,
     ) -> Result<Self, String>
@@ -63,8 +65,17 @@ impl<'a> Automata<'a> {
     }
 
     pub fn current_state(&self) -> &'a State {
-        &(self.3)
+        &self.3
     }
 
-    pub fn start(&self) {}
+    pub fn process_word(&'a self, word: &str) -> State {
+        let mut state = self.current_state().clone();
+        for c in word.chars() {
+            if !self.1.contains(c) {
+                panic!("{c} is not in the automata's alphabet ({}).", self.1)
+            }
+            state = self.2(state, c);
+        }
+        return state;
+    }
 }

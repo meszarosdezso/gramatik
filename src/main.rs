@@ -23,20 +23,29 @@ fn main() {
 
     let grammar = Gramatik::new(N, T, P, S).unwrap();
 
-    println!("1. {}", grammar.is_class(1));
-    println!("2. {}", grammar.is_class(2));
-    println!("3. {}", grammar.is_class(3));
+    println!("Grammar class: {}", grammar.class());
 
-    println!("{}", grammar.class());
+    let delta = |q: State, a| match (q.0, a) {
+        ("q0", 'a') => "q1".into(),
+        ("q1", 'a') => "q0".into(),
+        ("q1", 'b') => "q2".into(),
+        _ => panic!("Invalid state: cannot handle '{a}' in {q} state."),
+    };
 
     let automata = Automata::new(
         ["q0", "q1", "q2"],
         ['a', 'b', 'c'].into(),
-        &|q, _a| State(q),
+        &delta,
         "q0".into(),
-        ["q1"],
+        ["q2"],
     )
     .unwrap();
 
-    println!("{}", automata.current_state());
+    println!("Current state: {}", automata.current_state());
+
+    let word = "aaab";
+    println!(
+        "After processing '{word}', the automata ended in {} state.",
+        automata.process_word(word)
+    );
 }
