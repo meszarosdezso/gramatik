@@ -1,7 +1,7 @@
 use std::collections::HashSet;
 use std::hash::Hash;
 
-use crate::alphabet::{Alphabet, Letter};
+use crate::alphabet::{Alphabet, Letter, Word};
 
 #[derive(Eq, PartialEq, Hash, Debug, Clone)]
 pub struct State<'a>(pub &'a str);
@@ -18,7 +18,7 @@ impl<'a> From<&'a str> for State<'a> {
     }
 }
 
-type DeltaFn<'a> = dyn Fn(State<'a>, Letter) -> State;
+type DeltaFn<'a> = dyn Fn(State<'a>, Letter) -> Option<State>;
 
 pub struct Automata<'a> {
     states: HashSet<State<'a>>,
@@ -95,6 +95,14 @@ impl<'a> Automata<'a> {
     }
 }
 
+impl<'a> Iterator for Automata<'a> {
+    type Item = Word;
+
+    fn next(&mut self) -> Option<Self::Item> {
+        None
+    }
+}
+
 pub struct WordProcessor<'a> {
     automata: &'a mut Automata<'a>,
     word: String,
@@ -104,7 +112,7 @@ impl<'a> WordProcessor<'a> {
     fn new(automata: &'a mut Automata<'a>, word: &str) -> Self {
         Self {
             automata,
-            word: word.into(),
+            word: word.to_string(),
         }
     }
 }
@@ -119,19 +127,19 @@ impl<'a> Iterator for WordProcessor<'a> {
                 panic!("{letter} is not part of the automata's alphabet.")
             }
 
-            let state = delta(self.automata.current_state.clone(), letter);
+            if let Some(state) = delta(self.automata.current_state.clone(), letter) {
+                if !self.automata.states.contains(&state) {
+                    panic!(
+                        "{state} is not a valid state for the automata. Valid states are: {:?}",
+                        self.automata.states
+                    )
+                }
 
-            if !self.automata.states.contains(&state) {
-                panic!(
-                    "{state} is not a valid state for the automata. Valid states are: {:?}",
-                    self.automata.states
-                )
+                self.automata.current_letter_index += 1;
+                self.automata.current_state = state;
+
+                return Some(self.automata.current_state.clone());
             }
-
-            self.automata.current_letter_index += 1;
-            self.automata.current_state = state;
-
-            return Some(self.automata.current_state.clone());
         }
 
         None
@@ -150,9 +158,9 @@ macro_rules! delta_fn {
                 (
                     stringify!($q),
                     stringify!($a)
-                ) => State(stringify!($r)),
+                ) => Some(State(stringify!($r))),
             )*
-            _ => panic!("Invalid state: cannot handle '{a}' in {q} state."),
+            _ => None,
         }}
     };
 }

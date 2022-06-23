@@ -31,7 +31,7 @@ fn main() {
         (q1, b) -> q2
     );
 
-    let mut automata = Automata::new(
+    let automata = Automata::new(
         ["q0", "q1", "q2"],
         ['a', 'b', 'c'].into(),
         &delta,
@@ -40,7 +40,11 @@ fn main() {
     )
     .unwrap();
 
-    for state in automata.process_word("aaab") {
-        println!("{state}")
+    // for state in automata.process_word("aaab") {
+    //     println!("{state}")
+    // }
+
+    for word in automata {
+        println!("{word}");
     }
 }

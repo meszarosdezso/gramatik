@@ -1,7 +1,8 @@
-use std::iter::IntoIterator;
+use std::collections::hash_set::Iter;
 use std::collections::HashSet;
-use std::hash::Hash;
 use std::fmt;
+use std::hash::Hash;
+use std::iter::IntoIterator;
 
 pub const EPSILON: char = 'ε';
 
@@ -9,12 +10,16 @@ pub type Letter = char;
 pub type Word = String;
 
 pub struct Alphabet {
-    letters: HashSet<Letter>
+    letters: HashSet<Letter>,
 }
 
 impl Alphabet {
     pub fn contains(&self, letter: Letter) -> bool {
         self.letters.contains(&letter)
+    }
+
+    pub fn iter(&self) -> Iter<Letter> {
+        self.letters.iter()
     }
 }
 
@@ -33,12 +38,15 @@ impl fmt::Display for Alphabet {
     }
 }
 
-impl<I> From<I> for Alphabet 
-where <I as IntoIterator>::Item: Hash + Eq + PartialEq + Into<char>, I: IntoIterator,
+impl<I> From<I> for Alphabet
+where
+    <I as IntoIterator>::Item: Hash + Eq + PartialEq + Into<char>,
+    I: IntoIterator,
 {
     fn from(i: I) -> Self {
-
         let letters = i.into_iter().map(|e| e.into());
-        Self { letters: HashSet::from_iter(letters) }
+        Self {
+            letters: HashSet::from_iter(letters),
+        }
     }
 }
