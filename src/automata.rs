@@ -20,20 +20,23 @@ impl<'a> From<&'a str> for State<'a> {
 
 type DeltaFn<'a> = dyn Fn(State<'a>, Letter) -> State;
 
-pub struct Automata<'a>(
-    HashSet<State<'a>>,
-    Alphabet,
-    &'a DeltaFn<'a>,
-    State<'a>,
-    HashSet<State<'a>>,
-);
+pub struct Automata<'a> {
+    states: HashSet<State<'a>>,
+    alphabet: Alphabet,
+    delta_fn: &'a DeltaFn<'a>,
+    initial_state: State<'a>,
+    accepted_states: HashSet<State<'a>>,
+
+    current_state: State<'a>,
+    current_letter_index: usize,
+}
 
 impl<'a> Automata<'a> {
     pub fn new<S, AS>(
         states: S,
         alphabet: Alphabet,
-        delta: &'a DeltaFn<'a>,
-        start_state: State<'a>,
+        delta_fn: &'a DeltaFn<'a>,
+        initial_state: State<'a>,
         accepted_states: AS,
     ) -> Result<Self, String>
     where
@@ -49,9 +52,9 @@ impl<'a> Automata<'a> {
             return Err(format!("States should not be empty."));
         }
 
-        if !states.contains(&start_state) {
+        if !states.contains(&initial_state) {
             return Err(format!(
-                "States should contain the start state ({start_state}) too!"
+                "Initial state ({initial_state}) is not a valid state of the automata!"
             ));
         }
 
@@ -61,22 +64,77 @@ impl<'a> Automata<'a> {
             return Err(format!("Accepted states should be a subset of the states."));
         }
 
-        Ok(Self(states, alphabet, delta, start_state, accepted_states))
+        let current_state = initial_state.clone();
+
+        Ok(Self {
+            states,
+            alphabet,
+            delta_fn,
+            initial_state,
+            accepted_states,
+
+            current_state,
+            current_letter_index: 0,
+        })
     }
 
-    pub fn current_state(&self) -> &'a State {
-        &self.3
+    pub fn initial_state(&'a self) -> &'a State<'a> {
+        &self.initial_state
     }
 
-    pub fn process_word(&'a self, word: &str) -> State {
-        let mut state = self.current_state().clone();
-        for c in word.chars() {
-            if !self.1.contains(c) {
-                panic!("{c} is not in the automata's alphabet ({}).", self.1)
-            }
-            state = self.2(state, c);
+    pub fn current_state(&'a self) -> &'a State<'a> {
+        &self.current_state
+    }
+
+    pub fn check_state(&'a self, state: &'a State<'a>) -> bool {
+        self.accepted_states.contains(state)
+    }
+
+    pub fn process_word(&'a mut self, word: &str) -> WordProcessor {
+        return WordProcessor::new(self, word);
+    }
+}
+
+pub struct WordProcessor<'a> {
+    automata: &'a mut Automata<'a>,
+    word: String,
+}
+
+impl<'a> WordProcessor<'a> {
+    fn new(automata: &'a mut Automata<'a>, word: &str) -> Self {
+        Self {
+            automata,
+            word: word.into(),
         }
-        return state;
+    }
+}
+
+impl<'a> Iterator for WordProcessor<'a> {
+    type Item = State<'a>;
+
+    fn next(&mut self) -> Option<Self::Item> {
+        let delta = self.automata.delta_fn;
+        if let Some(letter) = self.word.chars().nth(self.automata.current_letter_index) {
+            if !self.automata.alphabet.contains(letter) {
+                panic!("{letter} is not part of the automata's alphabet.")
+            }
+
+            let state = delta(self.automata.current_state.clone(), letter);
+
+            if !self.automata.states.contains(&state) {
+                panic!(
+                    "{state} is not a valid state for the automata. Valid states are: {:?}",
+                    self.automata.states
+                )
+            }
+
+            self.automata.current_letter_index += 1;
+            self.automata.current_state = state;
+
+            return Some(self.automata.current_state.clone());
+        }
+
+        None
     }
 }
 

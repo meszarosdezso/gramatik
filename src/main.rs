@@ -31,7 +31,7 @@ fn main() {
         (q1, b) -> q2
     );
 
-    let automata = Automata::new(
+    let mut automata = Automata::new(
         ["q0", "q1", "q2"],
         ['a', 'b', 'c'].into(),
         &delta,
@@ -40,11 +40,7 @@ fn main() {
     )
     .unwrap();
 
-    println!("Current state: {}", automata.current_state());
-
-    let word = "aaab";
-    println!(
-        "After processing '{word}', the automata ended in {} state.",
-        automata.process_word(word)
-    );
+    for state in automata.process_word("aaab") {
+        println!("{state}")
+    }
 }
